@@ -18,7 +18,5 @@
 -- 3.15 Remove all boxes from saturated warehouses.
 -- 3.16 Add Index for column "Warehouse" in table "boxes"
     -- !!!NOTE!!!: index should NOT be used on small tables in practice
--- 3.17 Print all the existing indexes
-    -- !!!NOTE!!!: index should NOT be used on small tables in practice
--- 3.18 Remove (drop) the index you added just
+-- 3.17 Remove (drop) the index you added just
     -- !!!NOTE!!!: index should NOT be used on small tables in practice

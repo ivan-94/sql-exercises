@@ -49,15 +49,61 @@ GROUP BY warehouses.code;
 
 
 --3.9 Select the codes of all warehouses that are saturated (a warehouse is saturated if the number of boxes in it is larger than the warehouse's capacity).
+SELECT code 
+FROM warehouses
+WHERE capacity < (SELECT COUNT(*) FROM boxes WHERE warehouses.code = warehouse);
+-- or
+SELECT warehouses.code
+FROM boxes, warehouses
+WHERE boxes.warehouse = warehouses.code
+GROUP BY warehouses.code
+HAVING COUNT(boxes.code) > warehouses.capacity;
+
+
 --3.10 Select the codes of all the boxes located in Chicago.
+SELECT boxes.code
+FROM boxes, warehouses
+WHERE boxes.warehouse = warehouses.code
+  AND warehouses.location = 'Chicago';
+-- or
+SELECT code
+FROM boxes
+WHERE warehouse IN (SELECT code
+                    FROM warehouses 
+                    WHERE location = 'Chicago');
+
+
 --3.11 Create a new warehouse in New York with a capacity for 3 boxes.
+INSERT INTO warehouses(location, capacity) VALUES('New York', 3);
+
+
 --3.12 Create a new box, with code "H5RT", containing "Papers" with a value of $200, and located in warehouse 2.
+INSERT INTO boxes(code, contents, value, warehouse) VALUES('H5RT', 'Papers', 200, 2);
+
+
 --3.13 Reduce the value of all boxes by 15%.
+UPDATE boxes SET value = value * 0.85;
+
+
 --3.14 Remove all boxes with a value lower than $100.
+DELETE FROM boxes WHERE value < 100;
+
+
 -- 3.15 Remove all boxes from saturated warehouses.
+DELETE FROM boxes
+WHERE warehouse IN (SELECT code
+                    FROM warehouses
+                    WHERE capacity < (SELECT COUNT(*) 
+                                      FROM boxes AS B
+                                      WHERE warehouses.code = B.warehouse)
+                    );
+
+
 -- 3.16 Add Index for column "Warehouse" in table "boxes"
     -- !!!NOTE!!!: index should NOT be used on small tables in practice
--- 3.17 Print all the existing indexes
+CREATE INDEX test_index ON boxes(warehouse);
+
+
+-- 3.17 Remove (drop) the index you added just
     -- !!!NOTE!!!: index should NOT be used on small tables in practice
--- 3.18 Remove (drop) the index you added just
-    -- !!!NOTE!!!: index should NOT be used on small tables in practice
+DROP INDEX test_index;
