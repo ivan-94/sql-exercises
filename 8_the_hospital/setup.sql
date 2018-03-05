@@ -83,11 +83,11 @@ CREATE TABLE nurses (
 CREATE TABLE appointments(
   id serial PRIMARY KEY,
   patient integer NOT NULL REFERENCES patients(ssn),
-  prenurse integer REFERENCES nurses(id),
+  prepnurse integer REFERENCES nurses(id),
   physician integer NOT NULL REFERENCES physicians(id),
   date_start timestamp NOT NULL,
   date_end timestamp NOT NULL,
-  examinationRoom text NOT NULL
+  examination_room text NOT NULL
 );
 
 -- 药物

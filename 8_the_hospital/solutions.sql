@@ -111,11 +111,82 @@ FROM physicians AS P
 
 
 -- 8.5 Obtain the information for appointments where a patient met with a physician other than his/her primary care physician. Show the following information: Patient name, physician name, nurse name (if any), start and end time of appointment, examination room, and the name of the patient's primary care physician.
--- 8.6 The Patient field in Undergoes is redundant, since we can obtain it from the Stay table. There are no constraints in force to prevent inconsistencies between these two tables. More specifically, the Undergoes table may include a row where the patient ID does not match the one we would obtain from the Stay table through the Undergoes.Stay foreign key. Select all rows from Undergoes that exhibit this inconsistency.
+SELECT 
+  P.name AS patient_name,
+  R.name AS physician_name,
+  S.name AS nurse_name, 
+  Q.date_start, 
+  Q.date_end, 
+  Q.examination_room,
+  T.name AS PCP
+FROM patients AS P
+     INNER JOIN appointments AS Q ON P.ssn = Q.patient AND P.PCP != Q.physician
+     INNER JOIN physicians AS R ON Q.physician = R.id
+     LEFT OUTER JOIN nurses AS S ON Q.prepnurse = S.id
+     INNER JOIN physicians AS T ON P.PCP = T.id;
+
+
+-- 8.6 The Patient field in Undergoes is redundant, since we can obtain it from the Stay table. 
+-- There are no constraints in force to prevent inconsistencies between these two tables. More 
+-- specifically, the Undergoes table may include a row where the patient ID does not match the 
+-- one we would obtain from the Stay table through the Undergoes.Stay foreign key. 
+-- Select all rows from Undergoes that exhibit this inconsistency.
+SELECT U.*
+FROM undergoes AS U INNER JOIN staies AS S
+  ON U.stay = S.id AND U.patient != S.patient;
+-- or
+SELECT *
+FROM undergoes
+WHERE patient NOT IN (
+  SELECT S.patient
+  FROM staies AS S
+  WHERE stay = S.id
+);
+
+
 -- 8.7 Obtain the names of all the nurses who have ever been on call for room 123.
--- 8.8 The hospital has several examination rooms where appointments take place. Obtain the number of appointments that have taken place in each examination room.
+SELECT T.name
+FROM (SELECT * FROM rooms WHERE number = 123) AS R 
+  INNER JOIN on_call AS S
+  ON R.block_floor = S.block_floor AND R.block_code = S.block_code
+  INNER JOIN nurses AS T
+  ON S.nurse = T.id;
+-- or
+SELECT R.name FROM nurses AS R
+WHERE id IN (
+  SELECT S.nurse
+  FROM on_call AS S INNER JOIN rooms AS T
+    ON S.block_floor = T.block_floor 
+   AND S.block_code = T.block_code 
+   AND T.number = 123
+);
+
+
+-- 8.8 The hospital has several examination rooms where appointments take place. 
+-- Obtain the number of appointments that have taken place in each examination room.
+SELECT examination_room, COUNT(id)
+FROM appointments
+GROUP BY examination_room;
+
+
 -- 8.9 Obtain the names of all patients (also include, for each patient, the name of the patient's primary care physician), such that \emph{all} the following are true:
     -- The patient has been prescribed some medication by his/her primary care physician.
     -- The patient has undergone a procedure with a cost larger that $5,000
     -- The patient has had at least two appointment where the nurse who prepped the appointment was a registered nurse.
     -- The patient's primary care physician is not the head of any department.
+SELECT O.name
+FROM patients AS O 
+  INNER JOIN physicians AS P
+   ON O.PCP = P.id AND P.id NOT IN (SELECT head FROM departments) 
+  INNER JOIN prescribes AS Q
+   ON Q.physician = O.PCP AND Q.patient = O.ssn
+  INNER JOIN undergoes AS R
+   ON O.ssn = R.patient
+  INNER JOIN procedures AS S
+   ON R.procedure = S.code
+  AND S.cost > 5000
+WHERE (
+  SELECT COUNT(*)
+  FROM appointments AS T LEFT OUTER JOIN nurses AS U
+  ON T.prepnurse = U.id AND T.patient = O.ssn
+  WHERE U.id IS NULL) >= 2;
